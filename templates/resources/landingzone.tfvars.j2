@@ -1,0 +1,39 @@
+landingzone = {
+  backend_type        = "{{ caf_terraform.launchpad.backend_type | default("azurerm")}}"
+  level               = "{{ config.tfstates['asvm'][subscription_key].level }}"
+  key                 = "{{ config.tfstates['asvm'][subscription_key].subscription.lz_key_name }}"
+{% if resources.subscriptions[subscription_key].landingzone.remote_tfstates is defined %}
+{% if resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform.virtual_hubs is defined %}
+  global_settings_key = "{{ config.tfstates['platform'].virtual_hubs[resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform.virtual_hubs].lz_key_name }}"
+{% else %}
+  global_settings_key = "{{ config.tfstates['asvm'][resources.subscriptions[subscription_key].landingzone.remote_tfstates.asvm.subscription].subscription.lz_key_name }}"
+{% endif %}
+  tfstates = {
+{% if resources.subscriptions[subscription_key].landingzone.remote_tfstates.asvm is defined %}
+{% for a_key, a_value in resources.subscriptions[subscription_key].landingzone.remote_tfstates.asvm.items() %}
+    {{ config.tfstates['asvm'][a_value].subscription.lz_key_name }} = {
+      tfstate   = "{{ config.tfstates['asvm'][a_value].subscription.tfstate }}"
+      workspace = "{{ config.tfstates['asvm'][a_value].workspace }}"
+    }
+{% endfor %}
+{% endif %}
+{% if resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform is defined %}
+{% for p_key in resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform.keys() %}
+{% if config.tfstates['platform'][p_key][resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform[p_key]] is defined  %}
+    {{ config.tfstates['platform'][p_key][resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform[p_key]].lz_key_name }} = {
+      tfstate   = "{{ config.tfstates['platform'][p_key][resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform[p_key]].tfstate }}"
+      level     = "lower"
+      workspace = "{{ config.tfstates['platform'][p_key][resources.subscriptions[subscription_key].landingzone.remote_tfstates.platform[p_key]].workspace | default('tfstate') }}"
+    }
+{% else %}
+    {{ config.tfstates['platform'][p_key].lz_key_name }} = {
+      tfstate   = "{{ config.tfstates['platform'][p_key].tfstate }}"
+      level     = "lower"
+      workspace = "{{ config.tfstates['platform'][p_key].workspace | default('tfstate') }}"
+    }
+{% endif %}
+{% endfor %}
+{% endif %}
+  }
+{% endif %}
+}
